@@ -15,7 +15,7 @@ func resourceServer() *schema.Resource {
 		Delete: resourceServerDelete,
 
 		Schema: map[string]*schema.Schema{
-			"address": &schema.Schema{
+			"host_name": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 			},
@@ -40,14 +40,14 @@ func resourceServer() *schema.Resource {
 }
 
 func resourceServerCreate(d *schema.ResourceData, m interface{}) error {
-	address := d.Get("address").(string)
-	d.SetId(address)
+	host_name := d.Get("host_name").(string)
+	d.SetId(host_name)
 
 	zone_id := d.Get("zone_id").(string)
 	email := d.Get("email").(string)
 	token := d.Get("token").(string)
 
-	purgeRequest(address, email, token, zone_id)
+	purgeRequest(host_name, email, token, zone_id)
 
 	return resourceServerRead(d, m)
 }
@@ -60,21 +60,21 @@ func resourceServerUpdate(d *schema.ResourceData, m interface{}) error {
 	// Enable partial state mode
 	d.Partial(true)
 
-	address := d.Get("address").(string)
+	host_name := d.Get("host_name").(string)
 	zone_id := d.Get("zone_id").(string)
 	email := d.Get("email").(string)
 	token := d.Get("token").(string)
 
 	d.SetPartial("timestamp")
 
-	purgeRequest(address, email, token, zone_id)
+	purgeRequest(host_name, email, token, zone_id)
 
 	d.Partial(false)
 
 	return resourceServerRead(d, m)
 }
 
-func purgeRequest(address string, email string, token string, zone_id string) error {
+func purgeRequest(host_name string, email string, token string, zone_id string) error {
 
 	// curl -X POST \
 	//   https://api.cloudflare.com/client/v4/zones/ZONE_ID/purge_cache \
@@ -91,7 +91,7 @@ func purgeRequest(address string, email string, token string, zone_id string) er
 
 	url := fmt.Sprintf("https://api.cloudflare.com/client/v4/zones/%s/purge_cache", zone_id)
 
-	body := fmt.Sprintf(`{"hosts":["%s"]}`, address)
+	body := fmt.Sprintf(`{"hosts":["%s"]}`, host_name)
 
 	req.Post(url, body, authHeader)
 
