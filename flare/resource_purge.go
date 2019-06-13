@@ -25,16 +25,6 @@ func resourceServer() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"email": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-			},
-			"token": &schema.Schema{
-				Type:      schema.TypeString,
-				Required:  true,
-				Sensitive: true,
-				StateFunc: hashSum,
-			},
 			"timestamp": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
@@ -44,12 +34,13 @@ func resourceServer() *schema.Resource {
 }
 
 func resourceServerCreate(d *schema.ResourceData, m interface{}) error {
+	config := m.(Config)
 	hostName := d.Get("host_name").(string)
 	d.SetId(hostName)
 
 	zoneID := d.Get("zone_id").(string)
-	email := d.Get("email").(string)
-	token := d.Get("token").(string)
+	email := config.Email
+	token := config.Token
 
 	purgeRequest(hostName, email, token, zoneID)
 
@@ -61,13 +52,14 @@ func resourceServerRead(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceServerUpdate(d *schema.ResourceData, m interface{}) error {
+	config := m.(Config)
 	// Enable partial state mode
 	d.Partial(true)
 
 	hostName := d.Get("host_name").(string)
 	zoneID := d.Get("zone_id").(string)
-	email := d.Get("email").(string)
-	token := d.Get("token").(string)
+	email := config.Email
+	token := config.Token
 
 	d.SetPartial("timestamp")
 
