@@ -1,6 +1,6 @@
 package flare
 
 type Config struct {
-	Email   string
-	Token   string
+	Email string
+	Token string
 }
