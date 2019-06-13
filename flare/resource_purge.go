@@ -30,8 +30,8 @@ func resourceServer() *schema.Resource {
 				Required: true,
 			},
 			"token": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
+				Type:      schema.TypeString,
+				Required:  true,
 				Sensitive: true,
 				StateFunc: hashSum,
 			},
@@ -44,14 +44,14 @@ func resourceServer() *schema.Resource {
 }
 
 func resourceServerCreate(d *schema.ResourceData, m interface{}) error {
-	host_name := d.Get("host_name").(string)
-	d.SetId(host_name)
+	hostName := d.Get("host_name").(string)
+	d.SetId(hostName)
 
-	zone_id := d.Get("zone_id").(string)
+	zoneID := d.Get("zone_id").(string)
 	email := d.Get("email").(string)
 	token := d.Get("token").(string)
 
-	purgeRequest(host_name, email, token, zone_id)
+	purgeRequest(hostName, email, token, zoneID)
 
 	return resourceServerRead(d, m)
 }
@@ -64,21 +64,21 @@ func resourceServerUpdate(d *schema.ResourceData, m interface{}) error {
 	// Enable partial state mode
 	d.Partial(true)
 
-	host_name := d.Get("host_name").(string)
-	zone_id := d.Get("zone_id").(string)
+	hostName := d.Get("host_name").(string)
+	zoneID := d.Get("zone_id").(string)
 	email := d.Get("email").(string)
 	token := d.Get("token").(string)
 
 	d.SetPartial("timestamp")
 
-	purgeRequest(host_name, email, token, zone_id)
+	purgeRequest(hostName, email, token, zoneID)
 
 	d.Partial(false)
 
 	return resourceServerRead(d, m)
 }
 
-func purgeRequest(host_name string, email string, token string, zone_id string) error {
+func purgeRequest(hostName string, email string, token string, zoneID string) error {
 
 	// curl -X POST \
 	//   https://api.cloudflare.com/client/v4/zones/ZONE_ID/purge_cache \
@@ -93,9 +93,9 @@ func purgeRequest(host_name string, email string, token string, zone_id string) 
 		"X-Auth-Key":   token,
 	}
 
-	url := fmt.Sprintf("https://api.cloudflare.com/client/v4/zones/%s/purge_cache", zone_id)
+	url := fmt.Sprintf("https://api.cloudflare.com/client/v4/zones/%s/purge_cache", zoneID)
 
-	body := fmt.Sprintf(`{"hosts":["%s"]}`, host_name)
+	body := fmt.Sprintf(`{"hosts":["%s"]}`, hostName)
 
 	req.Post(url, body, authHeader)
 
