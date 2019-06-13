@@ -65,7 +65,7 @@ if [[ ! -f release_info.md ]];then
   echo "## Fixed" >> release_info.md
   echo " - "      >> release_info.md
   echo ""         >> release_info.md
-  vi release_info.md
+  nano release_info.md
   if [[ ! -f release_info.md || -z "$(cat release_info.md)" ]];then
     echo "release_info.md file does not exist or is empty. I will not proceed."
     exit 1

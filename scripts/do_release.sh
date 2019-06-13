@@ -49,15 +49,13 @@ for GOOS in "${OSs[@]}";do
   for GOARCH in "${ARCHs[@]}";do
     export GOOS GOARCH
 
-    TF_OUT_FILE="$releases/terraform-provider-flare_$tag-$GOOS-$GOARCH"
+    TF_OUT_FILE="$releases/terraform-provider-flare-$GOOS-$GOARCH"
     echo "  $TF_OUT_FILE"
     go build -o "$TF_OUT_FILE" ../
     ARTIFACTS+=("$TF_OUT_FILE")
 
   done
 done
-
-exit 1
 
 #Create the release so we can add our files
 ./create-github-release.sh github_api_token=$github_api_token owner=$owner repo=$repo tag=$tag draft=false
@@ -69,8 +67,4 @@ done
 
 echo "Cleaning up..."
 rm -f release_info.md
-for GOOS in "${OSs[@]}";do
-  for GOARCH in "${ARCHs[@]}";do
-    rm -f "terraform-provider-flare_$tag-$GOOS-$GOARCH" "fakeserver-$tag-$GOOS-$GOARCH"
-  done
-done
+rm -rf $releases
