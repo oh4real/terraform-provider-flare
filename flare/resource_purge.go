@@ -1,7 +1,9 @@
-package main
+package flare
 
 import (
 	"fmt"
+
+	"crypto/sha256"
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/imroc/req"
@@ -30,6 +32,8 @@ func resourceServer() *schema.Resource {
 			"token": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
+				Sensitive: true,
+				StateFunc: hashSum,
 			},
 			"timestamp": &schema.Schema{
 				Type:     schema.TypeString,
@@ -103,4 +107,8 @@ func resourceServerDelete(d *schema.ResourceData, m interface{}) error {
 	// it is added here for explicitness.
 	d.SetId("")
 	return nil
+}
+
+func hashSum(contents interface{}) string {
+	return fmt.Sprintf("%x", sha256.Sum256([]byte(contents.(string))))
 }
