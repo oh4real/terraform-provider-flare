@@ -5,6 +5,8 @@ services:
 language: go
 go:
 - 1.12.x
+env:
+  GOFLAGS=-mod=vendor
 
 install:
 # This script is used by the Travis build to install a cookie for
@@ -13,7 +15,7 @@ install:
 # See: https://github.com/golang/go/issues/12933
 - bash scripts/gogetcookie.sh
 
-script: 
+script:
 - make test
 - make vet
 - make website-test
