@@ -35,14 +35,13 @@ func resourceServer() *schema.Resource {
 
 func resourceServerCreate(d *schema.ResourceData, m interface{}) error {
 	config := m.(Config)
-	hostName := d.Get("host_name").(string)
-	d.SetId(hostName)
 
 	zoneID := d.Get("zone_id").(string)
-	email := config.Email
-	token := config.Token
+	hostName := d.Get("host_name").(string)
 
-	purgeRequest(hostName, email, token, zoneID)
+	d.SetId(hostName)
+
+	purgeRequest(hostName, config.Email, config.Token, zoneID)
 
 	return resourceServerRead(d, m)
 }
@@ -53,17 +52,16 @@ func resourceServerRead(d *schema.ResourceData, m interface{}) error {
 
 func resourceServerUpdate(d *schema.ResourceData, m interface{}) error {
 	config := m.(Config)
+
+	zoneID := d.Get("zone_id").(string)
+	hostName := d.Get("host_name").(string)
+
 	// Enable partial state mode
 	d.Partial(true)
 
-	hostName := d.Get("host_name").(string)
-	zoneID := d.Get("zone_id").(string)
-	email := config.Email
-	token := config.Token
-
 	d.SetPartial("timestamp")
 
-	purgeRequest(hostName, email, token, zoneID)
+	purgeRequest(hostName, config.Email, config.Token, zoneID)
 
 	d.Partial(false)
 
@@ -75,7 +73,7 @@ func purgeRequest(hostName string, email string, token string, zoneID string) er
 	// curl -X POST \
 	//   https://api.cloudflare.com/client/v4/zones/ZONE_ID/purge_cache \
 	//   -H 'Content-Type: application/json' \
-	//   -H 'X-Auth-Email: API_PASSWORD' \
+	//   -H 'X-Auth-Email: API_EMAIL' \
 	//   -H 'X-Auth-Key: API_TOKEN' \
 	//   -d '{"hosts":["CUSTOM_HOSTNAME"]}'
 
