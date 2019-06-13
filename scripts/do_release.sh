@@ -1,9 +1,14 @@
 #!/bin/bash -e
 
-OSs=("darwin" "linux" "windows")
+OSs=("darwin" "linux")
 ARCHs=("386" "amd64")
 
-export GOPATH="$HOME/go"
+# export GOPATH="$HOME/go"
+
+# create build dir location
+rootDir=`pwd`
+releases="${rootDir}/releases"
+mkdir $releases
 
 #Get into the right directory
 cd $(dirname $0)
@@ -39,27 +44,20 @@ fi
 ARTIFACTS=()
 #for GOOS in darwin linux windows netbsd openbsd solaris;do
 
-echo "Synchronizing dependencies..."
-cd ../
-govendor sync
-cd -
-
 echo "Building..."
 for GOOS in "${OSs[@]}";do
   for GOARCH in "${ARCHs[@]}";do
     export GOOS GOARCH
 
-    TF_OUT_FILE="terraform-provider-restapi_$tag-$GOOS-$GOARCH"
+    TF_OUT_FILE="$releases/terraform-provider-flare_$tag-$GOOS-$GOARCH"
     echo "  $TF_OUT_FILE"
     go build -o "$TF_OUT_FILE" ../
     ARTIFACTS+=("$TF_OUT_FILE")
 
-    FS_OUT_FILE="fakeserver-$tag-$GOOS-$GOARCH"
-    echo "  $FS_OUT_FILE"
-    go build -o "$FS_OUT_FILE" ../fakeservercli
-    ARTIFACTS+=("$FS_OUT_FILE")
   done
 done
+
+exit 1
 
 #Create the release so we can add our files
 ./create-github-release.sh github_api_token=$github_api_token owner=$owner repo=$repo tag=$tag draft=false
@@ -73,6 +71,6 @@ echo "Cleaning up..."
 rm -f release_info.md
 for GOOS in "${OSs[@]}";do
   for GOARCH in "${ARCHs[@]}";do
-    rm -f "terraform-provider-restapi_$tag-$GOOS-$GOARCH" "fakeserver-$tag-$GOOS-$GOARCH"
+    rm -f "terraform-provider-flare_$tag-$GOOS-$GOARCH" "fakeserver-$tag-$GOOS-$GOARCH"
   done
 done
