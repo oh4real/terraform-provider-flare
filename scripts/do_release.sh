@@ -3,7 +3,6 @@
 OSs=("darwin" "linux" "windows")
 ARCHs=("386" "amd64")
 
-export REST_API_URI="http://127.0.0.1:8082"
 export GOPATH="$HOME/go"
 
 #Get into the right directory
@@ -20,11 +19,11 @@ if [[ -z "$github_api_token" && -f github_api_token ]];then
 fi
 
 if [[ -z "$owner" ]];then
-  owner="Mastercard"
+  owner="oh4real"
 fi
 
 if [[ -z "$repo" ]];then
-  repo="terraform-provider-restapi"
+  repo="terraform-provider-flare"
 fi
 
 if [[ -z "$github_api_token" || -z "$owner" || -z "$repo" || -z "$tag" ]];then
@@ -35,8 +34,6 @@ fi
 if [[ "$tag" != v* ]];then
   tag="v$tag"
 fi
-
-./test.sh
 
 #Build for all architectures we want
 ARTIFACTS=()
