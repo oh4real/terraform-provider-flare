@@ -68,6 +68,7 @@ func resourceServerUpdate(d *schema.ResourceData, m interface{}) error {
 	return resourceServerRead(d, m)
 }
 
+// @todo: replace all this to use cloudflare.go client
 func purgeRequest(hostName string, email string, token string, zoneID string) error {
 
 	// curl -X POST \
@@ -85,6 +86,7 @@ func purgeRequest(hostName string, email string, token string, zoneID string) er
 
 	url := fmt.Sprintf("https://api.cloudflare.com/client/v4/zones/%s/purge_cache", zoneID)
 
+	// @todo: make this an actual map
 	body := fmt.Sprintf(`{"hosts":["%s"]}`, hostName)
 
 	req.Post(url, body, authHeader)
