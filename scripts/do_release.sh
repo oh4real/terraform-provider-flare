@@ -8,7 +8,7 @@ ARCHs=("386" "amd64")
 # create build dir location
 rootDir=`pwd`
 releases="${rootDir}/releases"
-mkdir $releases
+mkdir -p $releases
 
 #Get into the right directory
 cd $(dirname $0)
@@ -52,7 +52,9 @@ for GOOS in "${OSs[@]}";do
     TF_OUT_FILE="$releases/terraform-provider-flare-$GOOS-$GOARCH"
     echo "  $TF_OUT_FILE"
     go build -o "$TF_OUT_FILE" ../
-    ARTIFACTS+=("$TF_OUT_FILE")
+    tar cvzf "${TF_OUT_FILE}.tar.gz" "$TF_OUT_FILE"
+    rm -rf "$TF_OUT_FILE"
+    ARTIFACTS+=("${TF_OUT_FILE}.tar.gz")
 
   done
 done
