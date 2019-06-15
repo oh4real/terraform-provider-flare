@@ -20,7 +20,6 @@ func Provider() terraform.ResourceProvider {
 				Type:      schema.TypeString,
 				Required:  true,
 				Sensitive: true,
-				StateFunc: hashSum,
 			},
 		},
 		ConfigureFunc: providerConfigure,
