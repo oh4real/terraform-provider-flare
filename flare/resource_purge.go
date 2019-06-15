@@ -3,6 +3,7 @@ package flare
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/hashicorp/terraform/helper/schema"
@@ -92,7 +93,9 @@ func purgeRequest(hostName string, email string, token string, zoneID string) er
 	e.Hosts = strings.Split(hostName, ",")
 	body, _ := json.Marshal(e)
 
-	req.Post(url, body, authHeader)
+	resp, _ := req.Post(url, body, authHeader)
+
+	log.Println(resp)
 
 	return nil
 }
