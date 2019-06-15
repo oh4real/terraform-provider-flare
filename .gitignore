@@ -17,3 +17,4 @@ terraform.*
 tf
 github_api_token
 releases
+tfplan

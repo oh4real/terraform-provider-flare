@@ -1,9 +1,10 @@
 package flare
 
 import (
+	"encoding/json"
 	"fmt"
-
-	"crypto/sha256"
+	"log"
+	"strings"
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/imroc/req"
@@ -86,10 +87,15 @@ func purgeRequest(hostName string, email string, token string, zoneID string) er
 
 	url := fmt.Sprintf("https://api.cloudflare.com/client/v4/zones/%s/purge_cache", zoneID)
 
-	// @todo: make this an actual map
-	body := fmt.Sprintf(`{"hosts":["%s"]}`, hostName)
+	var e struct {
+		Hosts []string `json:"hosts"`
+	}
+	e.Hosts = strings.Split(hostName, ",")
+	body, _ := json.Marshal(e)
 
-	req.Post(url, body, authHeader)
+	resp, _ := req.Post(url, body, authHeader)
+
+	log.Println(resp)
 
 	return nil
 }
@@ -99,8 +105,4 @@ func resourceServerDelete(d *schema.ResourceData, m interface{}) error {
 	// it is added here for explicitness.
 	d.SetId("")
 	return nil
-}
-
-func hashSum(contents interface{}) string {
-	return fmt.Sprintf("%x", sha256.Sum256([]byte(contents.(string))))
 }
