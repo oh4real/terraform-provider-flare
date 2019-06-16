@@ -28,11 +28,10 @@ func Provider() terraform.ResourceProvider {
 }
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
-	options := []cloudflare.Option{}
 	config := Config{
 		Email:   d.Get("email").(string),
 		Token:   d.Get("token").(string),
-		Options: options,
+		Options: []cloudflare.Option{},
 	}
 
 	client, err := config.Client()

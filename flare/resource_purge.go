@@ -1,9 +1,13 @@
 package flare
 
 import (
+	"crypto/sha256"
+	"fmt"
 	"log"
+	"strings"
 
 	"github.com/cloudflare/cloudflare-go"
+	"github.com/google/uuid"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
@@ -15,7 +19,7 @@ func resourceServer() *schema.Resource {
 		Delete: resourceServerDelete,
 
 		Schema: map[string]*schema.Schema{
-			"host_name": &schema.Schema{
+			"host_names": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 			},
@@ -32,15 +36,14 @@ func resourceServer() *schema.Resource {
 }
 
 func resourceServerCreate(d *schema.ResourceData, m interface{}) error {
-	// config := m.(Config)
 	client := m.(*cloudflare.API)
 
 	zoneID := d.Get("zone_id").(string)
-	hostName := d.Get("host_name").(string)
+	hostNames := d.Get("host_names").(string)
 
-	d.SetId(hostName)
+	d.SetId(uuid.New().String())
 
-	purgeCacheRequest(client, zoneID, hostName)
+	purgeCacheRequest(client, zoneID, hostNames)
 
 	return resourceServerRead(d, m)
 }
@@ -53,14 +56,17 @@ func resourceServerUpdate(d *schema.ResourceData, m interface{}) error {
 	client := m.(*cloudflare.API)
 
 	zoneID := d.Get("zone_id").(string)
-	hostName := d.Get("host_name").(string)
+	hostNames := d.Get("host_names").(string)
 
 	// Enable partial state mode
 	d.Partial(true)
 
 	d.SetPartial("timestamp")
 
-	purgeCacheRequest(client, zoneID, hostName)
+	err := purgeCacheRequest(client, zoneID, hostNames)
+	if err != nil {
+		return err
+	}
 
 	d.Partial(false)
 
@@ -74,9 +80,10 @@ func resourceServerDelete(d *schema.ResourceData, m interface{}) error {
 	return nil
 }
 
-func purgeCacheRequest(client *cloudflare.API, zoneID string, hostName string) error {
+func purgeCacheRequest(client *cloudflare.API, zoneID string, hostNames string) error {
 
-	pReq := cloudflare.PurgeCacheRequest{Hosts: []string{hostName}}
+	hosts := strings.Split(hostNames, ",")
+	pReq := cloudflare.PurgeCacheRequest{Hosts: hosts}
 
 	log.Printf("%+v", pReq)
 
@@ -84,5 +91,13 @@ func purgeCacheRequest(client *cloudflare.API, zoneID string, hostName string) e
 
 	log.Printf("%+v", resp)
 
+	if !resp.Success {
+		return fmt.Errorf("CloudFlare PurgeCache failed. Errors: %+v", resp.Errors)
+	}
+
 	return nil
+}
+
+func hashSum(contents interface{}) string {
+	return fmt.Sprintf("%x", sha256.Sum256([]byte(contents.(string))))
 }
