@@ -1,7 +1,6 @@
 package flare
 
 import (
-	"crypto/sha256"
 	"fmt"
 	"log"
 	"strings"
@@ -96,8 +95,4 @@ func purgeCacheRequest(client *cloudflare.API, zoneID string, hostNames string) 
 	}
 
 	return nil
-}
-
-func hashSum(contents interface{}) string {
-	return fmt.Sprintf("%x", sha256.Sum256([]byte(contents.(string))))
 }
