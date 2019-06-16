@@ -1,13 +1,13 @@
 package flare
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
 
+	"github.com/cloudflare/cloudflare-go"
+	"github.com/google/uuid"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/imroc/req"
 )
 
 func resourceServer() *schema.Resource {
@@ -18,7 +18,7 @@ func resourceServer() *schema.Resource {
 		Delete: resourceServerDelete,
 
 		Schema: map[string]*schema.Schema{
-			"host_name": &schema.Schema{
+			"host_names": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 			},
@@ -35,14 +35,14 @@ func resourceServer() *schema.Resource {
 }
 
 func resourceServerCreate(d *schema.ResourceData, m interface{}) error {
-	config := m.(Config)
+	client := m.(*cloudflare.API)
 
 	zoneID := d.Get("zone_id").(string)
-	hostName := d.Get("host_name").(string)
+	hostNames := d.Get("host_names").(string)
 
-	d.SetId(hostName)
+	d.SetId(uuid.New().String())
 
-	purgeRequest(hostName, config.Email, config.Token, zoneID)
+	purgeCacheRequest(client, zoneID, hostNames)
 
 	return resourceServerRead(d, m)
 }
@@ -52,57 +52,40 @@ func resourceServerRead(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceServerUpdate(d *schema.ResourceData, m interface{}) error {
-	config := m.(Config)
+	client := m.(*cloudflare.API)
 
 	zoneID := d.Get("zone_id").(string)
-	hostName := d.Get("host_name").(string)
+	hostNames := d.Get("host_names").(string)
 
-	// Enable partial state mode
-	d.Partial(true)
-
-	d.SetPartial("timestamp")
-
-	purgeRequest(hostName, config.Email, config.Token, zoneID)
-
-	d.Partial(false)
+	err := purgeCacheRequest(client, zoneID, hostNames)
+	if err != nil {
+		return err
+	}
 
 	return resourceServerRead(d, m)
-}
-
-// @todo: replace all this to use cloudflare.go client
-func purgeRequest(hostName string, email string, token string, zoneID string) error {
-
-	// curl -X POST \
-	//   https://api.cloudflare.com/client/v4/zones/ZONE_ID/purge_cache \
-	//   -H 'Content-Type: application/json' \
-	//   -H 'X-Auth-Email: API_EMAIL' \
-	//   -H 'X-Auth-Key: API_TOKEN' \
-	//   -d '{"hosts":["CUSTOM_HOSTNAME"]}'
-
-	authHeader := req.Header{
-		"Content-Type": "application/json",
-		"X-Auth-Email": email,
-		"X-Auth-Key":   token,
-	}
-
-	url := fmt.Sprintf("https://api.cloudflare.com/client/v4/zones/%s/purge_cache", zoneID)
-
-	var e struct {
-		Hosts []string `json:"hosts"`
-	}
-	e.Hosts = strings.Split(hostName, ",")
-	body, _ := json.Marshal(e)
-
-	resp, _ := req.Post(url, body, authHeader)
-
-	log.Println(resp)
-
-	return nil
 }
 
 func resourceServerDelete(d *schema.ResourceData, m interface{}) error {
 	// d.SetId("") is automatically called assuming delete returns no errors, but
 	// it is added here for explicitness.
 	d.SetId("")
+	return nil
+}
+
+func purgeCacheRequest(client *cloudflare.API, zoneID string, hostNames string) error {
+
+	hosts := strings.Split(hostNames, ",")
+	req := cloudflare.PurgeCacheRequest{Hosts: hosts}
+
+	log.Printf("%+v", req)
+
+	resp, _ := client.PurgeCache(zoneID, req)
+
+	log.Printf("%+v", resp)
+
+	if !resp.Success {
+		return fmt.Errorf("CloudFlare PurgeCache failed. Errors: %+v", resp.Errors)
+	}
+
 	return nil
 }

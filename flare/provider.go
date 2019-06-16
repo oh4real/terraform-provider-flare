@@ -1,6 +1,7 @@
 package flare
 
 import (
+	"github.com/cloudflare/cloudflare-go"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/terraform"
 )
@@ -28,9 +29,15 @@ func Provider() terraform.ResourceProvider {
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	config := Config{
-		Email: d.Get("email").(string),
-		Token: d.Get("token").(string),
+		Email:   d.Get("email").(string),
+		Token:   d.Get("token").(string),
+		Options: []cloudflare.Option{},
 	}
 
-	return config, nil
+	client, err := config.Client()
+	if err != nil {
+		return nil, err
+	}
+
+	return client, err
 }
