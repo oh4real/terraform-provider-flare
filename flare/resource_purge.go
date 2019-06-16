@@ -82,11 +82,11 @@ func resourceServerDelete(d *schema.ResourceData, m interface{}) error {
 func purgeCacheRequest(client *cloudflare.API, zoneID string, hostNames string) error {
 
 	hosts := strings.Split(hostNames, ",")
-	pReq := cloudflare.PurgeCacheRequest{Hosts: hosts}
+	req := cloudflare.PurgeCacheRequest{Hosts: hosts}
 
-	log.Printf("%+v", pReq)
+	log.Printf("%+v", req)
 
-	resp, _ := client.PurgeCache(zoneID, pReq)
+	resp, _ := client.PurgeCache(zoneID, req)
 
 	log.Printf("%+v", resp)
 
