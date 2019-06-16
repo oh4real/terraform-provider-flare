@@ -57,17 +57,10 @@ func resourceServerUpdate(d *schema.ResourceData, m interface{}) error {
 	zoneID := d.Get("zone_id").(string)
 	hostNames := d.Get("host_names").(string)
 
-	// Enable partial state mode
-	d.Partial(true)
-
-	d.SetPartial("timestamp")
-
 	err := purgeCacheRequest(client, zoneID, hostNames)
 	if err != nil {
 		return err
 	}
-
-	d.Partial(false)
 
 	return resourceServerRead(d, m)
 }
