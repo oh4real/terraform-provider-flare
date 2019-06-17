@@ -9,7 +9,8 @@ import (
 func Provider() terraform.ResourceProvider {
 	return &schema.Provider{
 		ResourcesMap: map[string]*schema.Resource{
-			"flare_purge": resourceServer(),
+			"flare_purge":           resourcePurge(),
+			"flare_custom_hostname": resourceCustomHostname(),
 		},
 
 		Schema: map[string]*schema.Schema{
