@@ -40,11 +40,13 @@ func resourceCustomHostname() *schema.Resource {
 
 func resourceCustomHostnameCreate(d *schema.ResourceData, m interface{}) error {
 	client := m.(*cloudflare.API)
+	hostName := d.Get("host_name").(string)
+	zoneID := d.Get("zone_id").(string)
 
 	customHostName := ExtendedCustomHostname{
 		CustomOriginServer: d.Get("custom_origin_server").(string),
 		CustomHostname: cloudflare.CustomHostname{
-			Hostname: d.Get("host_name").(string),
+			Hostname: hostName,
 			SSL: cloudflare.CustomHostnameSSL{
 				Method: "http",
 				Type:   "dv",
@@ -52,21 +54,40 @@ func resourceCustomHostnameCreate(d *schema.ResourceData, m interface{}) error {
 		},
 	}
 
-	// Until cloudflare-go gets "CustomOriginServer", do this `manually`
-	raw, err := client.Raw("POST", fmt.Sprintf("/zones/%s/custom_hostnames", d.Get("zone_id").(string)), customHostName)
+	id, err := client.CustomHostnameIDByName(zoneID, hostName)
+	if err != nil {
+		// could legit error or err because not found, cloudflare-go treats general or 404s the same
+		if msg := err.Error(); msg != "CustomHostname could not be found" {
+			return err
+		}
+
+		log.Println("CustomHostnameIDByName err: ", err)
+	}
+
+	if len(id) > 0 {
+		// custom hostname is already provisioned. set ID
+		d.SetId(id)
+
+		// let's create state
+		return resourceCustomHostnameRead(d, m)
+	}
+
+	// Until cloudflare-go gets "CustomOriginServer", do this `manually` with client since it's got api key, etc
+	raw, err := client.Raw("POST", fmt.Sprintf("/zones/%s/custom_hostnames", zoneID), customHostName)
 	if err != nil {
 		return err
 	}
 
 	log.Printf("%+v", string(raw))
 
-	resp := ExtendedCustomHostname{}
+	customHost := ExtendedCustomHostname{}
 
-	json.Unmarshal(raw, &resp)
+	// map raw json into struct
+	json.Unmarshal(raw, &customHost)
 
-	log.Printf("%+v", resp)
+	log.Printf("%+v", customHost)
 
-	d.SetId(resp.ID)
+	d.SetId(customHost.ID)
 
 	return resourceCustomHostnameRead(d, m)
 }
