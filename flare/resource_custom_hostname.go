@@ -41,12 +41,15 @@ func resourceCustomHostname() *schema.Resource {
 func resourceCustomHostnameCreate(d *schema.ResourceData, m interface{}) error {
 	client := m.(*cloudflare.API)
 
-	customHostName := ExtendedCustomHostname{}
-	customHostName.Hostname = d.Get("host_name").(string)
-	customHostName.CustomOriginServer = d.Get("custom_origin_server").(string)
-	customHostName.SSL = cloudflare.CustomHostnameSSL{
-		Method: "http",
-		Type:   "dv",
+	customHostName := ExtendedCustomHostname{
+		CustomOriginServer: d.Get("custom_origin_server").(string),
+		CustomHostname: cloudflare.CustomHostname{
+			Hostname: d.Get("host_name").(string),
+			SSL: cloudflare.CustomHostnameSSL{
+				Method: "http",
+				Type:   "dv",
+			},
+		},
 	}
 
 	// Until cloudflare-go gets "CustomOriginServer", do this `manually`
