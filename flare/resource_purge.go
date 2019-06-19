@@ -35,14 +35,8 @@ func resourcePurge() *schema.Resource {
 }
 
 func resourcePurgeCreate(d *schema.ResourceData, m interface{}) error {
-	client := m.(*cloudflare.API)
-
-	zoneID := d.Get("zone_id").(string)
-	hostNames := d.Get("host_names").(string)
 
 	d.SetId(uuid.New().String())
-
-	purgeCacheRequest(client, zoneID, hostNames)
 
 	return resourcePurgeRead(d, m)
 }
