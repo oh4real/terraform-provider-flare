@@ -10,12 +10,12 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
-func resourceServer() *schema.Resource {
+func resourcePurge() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceServerCreate,
-		Read:   resourceServerRead,
-		Update: resourceServerUpdate,
-		Delete: resourceServerDelete,
+		Create: resourcePurgeCreate,
+		Read:   resourcePurgeRead,
+		Update: resourcePurgeUpdate,
+		Delete: resourcePurgeDelete,
 
 		Schema: map[string]*schema.Schema{
 			"host_names": &schema.Schema{
@@ -34,7 +34,7 @@ func resourceServer() *schema.Resource {
 	}
 }
 
-func resourceServerCreate(d *schema.ResourceData, m interface{}) error {
+func resourcePurgeCreate(d *schema.ResourceData, m interface{}) error {
 	client := m.(*cloudflare.API)
 
 	zoneID := d.Get("zone_id").(string)
@@ -44,14 +44,14 @@ func resourceServerCreate(d *schema.ResourceData, m interface{}) error {
 
 	purgeCacheRequest(client, zoneID, hostNames)
 
-	return resourceServerRead(d, m)
+	return resourcePurgeRead(d, m)
 }
 
-func resourceServerRead(d *schema.ResourceData, m interface{}) error {
+func resourcePurgeRead(d *schema.ResourceData, m interface{}) error {
 	return nil
 }
 
-func resourceServerUpdate(d *schema.ResourceData, m interface{}) error {
+func resourcePurgeUpdate(d *schema.ResourceData, m interface{}) error {
 	client := m.(*cloudflare.API)
 
 	zoneID := d.Get("zone_id").(string)
@@ -62,10 +62,10 @@ func resourceServerUpdate(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 
-	return resourceServerRead(d, m)
+	return resourcePurgeRead(d, m)
 }
 
-func resourceServerDelete(d *schema.ResourceData, m interface{}) error {
+func resourcePurgeDelete(d *schema.ResourceData, m interface{}) error {
 	// d.SetId("") is automatically called assuming delete returns no errors, but
 	// it is added here for explicitness.
 	d.SetId("")
