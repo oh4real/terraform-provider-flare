@@ -20,19 +20,37 @@ func resourceCustomHostname() *schema.Resource {
 		Read:   resourceCustomHostnameRead,
 		Update: resourceCustomHostnameUpdate,
 		Delete: resourceCustomHostnameDelete,
-
 		Schema: map[string]*schema.Schema{
 			"host_name": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
+				ForceNew: true,
 			},
 			"zone_id": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
+				ForceNew: true,
 			},
 			"custom_origin_server": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
+				ForceNew: true,
+			},
+			"ssl_method": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  "http",
+				ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
+					v := val.(string)
+					methods := []string{"http", "cname", "email"}
+					for _, method := range methods {
+						if method == v {
+							return
+						}
+					}
+					errs = append(errs, fmt.Errorf("%q must be a valid SSL Method: http, cname, email. Got: %q", key, v))
+					return
+				},
 			},
 		},
 	}
@@ -48,7 +66,7 @@ func resourceCustomHostnameCreate(d *schema.ResourceData, m interface{}) error {
 		CustomHostname: cloudflare.CustomHostname{
 			Hostname: hostName,
 			SSL: cloudflare.CustomHostnameSSL{
-				Method: "http",
+				Method: d.Get("ssl_method").(string),
 				Type:   "dv",
 			},
 		},
@@ -68,7 +86,16 @@ func resourceCustomHostnameCreate(d *schema.ResourceData, m interface{}) error {
 		// custom hostname is already provisioned. set ID
 		d.SetId(id)
 
-		// let's create state
+		cH, err := client.CustomHostname(zoneID, id)
+		if err != nil {
+			return err
+		}
+
+		// when available
+		// d.Set("custom_origin_server", cH.CustomOriginServer)
+		d.Set("ssl_method", cH.SSL.Method)
+
+		// let's persist state from cloudflare
 		return resourceCustomHostnameRead(d, m)
 	}
 
@@ -105,8 +132,37 @@ func resourceCustomHostnameRead(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceCustomHostnameUpdate(d *schema.ResourceData, m interface{}) error {
-	// only changes allowed are SSL
-	// not implemented, simple SSL http/dv for now
+	client := m.(*cloudflare.API)
+	zoneID := d.Get("zone_id").(string)
+
+	ssl := struct {
+		SSL cloudflare.CustomHostnameSSL `json:"ssl,omitempty"`
+	}{
+		SSL: cloudflare.CustomHostnameSSL{
+			Method: d.Get("ssl_method").(string),
+			Type:   "dv",
+		},
+	}
+
+	log.Printf("ssl: %+v", ssl)
+
+	customHost, err := client.CustomHostname(zoneID, d.Id())
+	if err != nil {
+		return err
+	}
+
+	log.Printf("customHost: %+v", customHost)
+
+	log.Println(fmt.Sprintf("/zones/%s/custom_hostnames/%s", zoneID, customHost.ID))
+
+	// Until cloudflare-go client.UpdateCustomHostnameSSL() gets implemented, do this `manually` with client since it's got api key, etc
+	raw, err := client.Raw("PATCH", fmt.Sprintf("/zones/%s/custom_hostnames/%s", zoneID, customHost.ID), ssl)
+	if err != nil {
+		return err
+	}
+
+	log.Printf("%+v", string(raw))
+
 	return nil
 }
 
