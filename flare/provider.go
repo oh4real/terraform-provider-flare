@@ -16,12 +16,20 @@ func Provider() terraform.ResourceProvider {
 		Schema: map[string]*schema.Schema{
 			"email": &schema.Schema{
 				Type:     schema.TypeString,
-				Required: true,
+				Required: false,
+				Optional: true,
 			},
-			"token": &schema.Schema{
+			"api_token": &schema.Schema{
 				Type:      schema.TypeString,
-				Required:  true,
+				Required:  false,
+				Optional:  true,
 				Sensitive: true,
+			},
+			"api_key": &schema.Schema{
+				Type:      schema.TypeString,
+				Required:  false,
+				Sensitive: true,
+				Optional:  true,
 			},
 		},
 		ConfigureFunc: providerConfigure,
@@ -30,9 +38,10 @@ func Provider() terraform.ResourceProvider {
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	config := Config{
-		Email:   d.Get("email").(string),
-		Token:   d.Get("token").(string),
-		Options: []cloudflare.Option{},
+		Email:    d.Get("email").(string),
+		APIToken: d.Get("api_token").(string),
+		APIKey:   d.Get("api_key").(string),
+		Options:  []cloudflare.Option{},
 	}
 
 	client, err := config.Client()

@@ -9,11 +9,6 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
-type ExtendedCustomHostname struct {
-	cloudflare.CustomHostname
-	CustomOriginServer string `json:"custom_origin_server,omitempty"`
-}
-
 func resourceCustomHostname() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceCustomHostnameCreate,
@@ -61,15 +56,13 @@ func resourceCustomHostnameCreate(d *schema.ResourceData, m interface{}) error {
 	hostName := d.Get("host_name").(string)
 	zoneID := d.Get("zone_id").(string)
 
-	customHostName := ExtendedCustomHostname{
-		CustomOriginServer: d.Get("custom_origin_server").(string),
-		CustomHostname: cloudflare.CustomHostname{
-			Hostname: hostName,
-			SSL: cloudflare.CustomHostnameSSL{
-				Method: d.Get("ssl_method").(string),
-				Type:   "dv",
-			},
+	customHostName := cloudflare.CustomHostname{
+		Hostname: hostName,
+		SSL: cloudflare.CustomHostnameSSL{
+			Method: d.Get("ssl_method").(string),
+			Type:   "dv",
 		},
+		CustomOriginServer: d.Get("custom_origin_server").(string),
 	}
 
 	id, err := client.CustomHostnameIDByName(zoneID, hostName)
@@ -107,7 +100,7 @@ func resourceCustomHostnameCreate(d *schema.ResourceData, m interface{}) error {
 
 	log.Printf("%+v", string(raw))
 
-	customHost := ExtendedCustomHostname{}
+	customHost := cloudflare.CustomHostname{}
 
 	// map raw json into struct
 	json.Unmarshal(raw, &customHost)
