@@ -22,3 +22,8 @@ resource "flare_purge" "your_host_name" {
 }
 
 ```
+
+### Using travis and vendor
+1. Update `go.mod` for versions and requirements
+2. Execute `go mod vendor -v` to get latest into `/vendor` for travis
+3. Execute `go install -mod=vendor` to verify
