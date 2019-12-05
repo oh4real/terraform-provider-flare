@@ -10,8 +10,11 @@ env:
 cache:
   directories:
     - $GOPATH/pkg/mod
-    
+
 script:
+- go list -m all  
+- go get ./...  
+- go list -m all
 - make test
 - make vet
 
