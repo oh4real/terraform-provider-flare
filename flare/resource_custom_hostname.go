@@ -1,18 +1,12 @@
 package flare
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 
 	"github.com/cloudflare/cloudflare-go"
 	"github.com/hashicorp/terraform/helper/schema"
 )
-
-type ExtendedCustomHostname struct {
-	cloudflare.CustomHostname
-	CustomOriginServer string `json:"custom_origin_server,omitempty"`
-}
 
 func resourceCustomHostname() *schema.Resource {
 	return &schema.Resource{
@@ -61,15 +55,13 @@ func resourceCustomHostnameCreate(d *schema.ResourceData, m interface{}) error {
 	hostName := d.Get("host_name").(string)
 	zoneID := d.Get("zone_id").(string)
 
-	customHostName := ExtendedCustomHostname{
-		CustomOriginServer: d.Get("custom_origin_server").(string),
-		CustomHostname: cloudflare.CustomHostname{
-			Hostname: hostName,
-			SSL: cloudflare.CustomHostnameSSL{
-				Method: d.Get("ssl_method").(string),
-				Type:   "dv",
-			},
+	customHostName := cloudflare.CustomHostname{
+		Hostname: hostName,
+		SSL: cloudflare.CustomHostnameSSL{
+			Method: d.Get("ssl_method").(string),
+			Type:   "dv",
 		},
+		CustomOriginServer: d.Get("custom_origin_server").(string),
 	}
 
 	id, err := client.CustomHostnameIDByName(zoneID, hostName)
@@ -82,39 +74,27 @@ func resourceCustomHostnameCreate(d *schema.ResourceData, m interface{}) error {
 		log.Println("CustomHostnameIDByName err: ", err)
 	}
 
+	// custom hostname is already provisioned. set ID
 	if len(id) > 0 {
-		// custom hostname is already provisioned. set ID
 		d.SetId(id)
 
-		cH, err := client.CustomHostname(zoneID, id)
+		_, err := client.CustomHostname(zoneID, id)
 		if err != nil {
 			return err
 		}
 
-		// when available
-		// d.Set("custom_origin_server", cH.CustomOriginServer)
-		d.Set("ssl_method", cH.SSL.Method)
-
-		// let's persist state from cloudflare
+		// let's persist state directly from cloudflare
 		return resourceCustomHostnameRead(d, m)
 	}
 
-	// Until cloudflare-go gets "CustomOriginServer", do this `manually` with client since it's got api key, etc
-	raw, err := client.Raw("POST", fmt.Sprintf("/zones/%s/custom_hostnames", zoneID), customHostName)
+	customHost, err := client.CreateCustomHostname(zoneID, customHostName)
 	if err != nil {
 		return err
 	}
 
-	log.Printf("%+v", string(raw))
+	log.Printf("%+v", customHost.Result)
 
-	customHost := ExtendedCustomHostname{}
-
-	// map raw json into struct
-	json.Unmarshal(raw, &customHost)
-
-	log.Printf("%+v", customHost)
-
-	d.SetId(customHost.ID)
+	d.SetId(customHost.Result.ID)
 
 	return resourceCustomHostnameRead(d, m)
 }
@@ -155,7 +135,8 @@ func resourceCustomHostnameUpdate(d *schema.ResourceData, m interface{}) error {
 
 	log.Println(fmt.Sprintf("/zones/%s/custom_hostnames/%s", zoneID, customHost.ID))
 
-	// Until cloudflare-go client.UpdateCustomHostnameSSL() gets implemented, do this `manually` with client since it's got api key, etc
+	// Until cloudflare-go client.UpdateCustomHostnameSSL() gets implemented,
+	// do this `manually` with client since it's got api key, etc
 	raw, err := client.Raw("PATCH", fmt.Sprintf("/zones/%s/custom_hostnames/%s", zoneID, customHost.ID), ssl)
 	if err != nil {
 		return err

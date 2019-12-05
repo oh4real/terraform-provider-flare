@@ -6,7 +6,10 @@ language: go
 go:
 - 1.12.x
 env:
-  GOFLAGS=-mod=vendor
+  GO111MODULE=on
+cache:
+  directories:
+    - $GOPATH/pkg/mod
 
 script:
 - make test
