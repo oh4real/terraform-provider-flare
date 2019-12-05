@@ -135,7 +135,7 @@ func resourceCustomHostnameUpdate(d *schema.ResourceData, m interface{}) error {
 
 	log.Println(fmt.Sprintf("/zones/%s/custom_hostnames/%s", zoneID, customHost.ID))
 
-	// Until cloudflare-go client.UpdateCustomHostnameSSL() gets implemented, 
+	// Until cloudflare-go client.UpdateCustomHostnameSSL() gets implemented,
 	// do this `manually` with client since it's got api key, etc
 	raw, err := client.Raw("PATCH", fmt.Sprintf("/zones/%s/custom_hostnames/%s", zoneID, customHost.ID), ssl)
 	if err != nil {
